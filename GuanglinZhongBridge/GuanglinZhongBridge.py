@@ -152,6 +152,7 @@ myModel.rootAssembly.DatumCsysByDefault(CARTESIAN)
 myModel.rootAssembly.Instance(dependent=ON, name=
     'myPart-1', part=myPart)
 
+
 from step import *
 
 myModel.StaticStep(name='Step-1', previous='Initial',
@@ -162,3 +163,44 @@ from load import *
 myAssembly = myModel.rootAssembly
 
 v=myAssembly.instances['myPart-1'].vertices
+
+for i in range(0,nBeams):
+    for j in range(0,2):
+        verts=v.findAt(((j*span, hDist*i, 0.0), ),)
+
+        myAssembly.Set(vertices=verts,name='Set-fix'+str(i)+'-'+str(j))
+
+        region=myAssembly.sets['Set-fix'+str(i)+'-'+str(j)]
+
+        if j==0:
+            myModel.DisplacementBC(name='BC-' + str(i)+'-'+str(j), createStepName='Step-1',
+                region=region, u1=0.0, u2=0.0, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0,
+                amplitude=UNSET, fixed=OFF, distributionType=UNIFORM,fieldName='',
+                localCsys=None)
+        else:
+            myModel.DisplacementBC(name='BC-' + str(i)+'-'+str(j), createStepName='Step-1',
+                region=region, u1=0.0, u2=0.0, u3=0.0, ur1=0.0, ur2=0.0, ur3=UNSET,
+                amplitude=UNSET, fixed=OFF, distributionType=UNIFORM,fieldName='',
+                localCsys=None)
+
+
+#mdb.models['JianyangRailThrust'].ConcentratedForce(cf3=-2000.0, createStepName=
+#    'Step-1', distributionType=UNIFORM, field='', localCsys=None, name='Load-1'
+#    , region=Region(
+#    vertices=mdb.models['JianyangRailThrust'].rootAssembly.instances['myPart-1'].vertices.findAt(
+#    ((4*l, h1+h2, 0.0), ), )))
+
+from mesh import *
+myPart.seedPart(deviationFactor=0.1, 
+    minSizeFactor=0.1, size=0.15)
+
+elemType1=mesh.ElemType(elemCode=B31)
+
+pR=(myPart.edges,)
+
+myPart.setElementType(regions=pR, elemTypes=(elemType1,))
+
+# Mesh the part instance.
+myPart.generateMesh()
+
+myAssembly.regenerate()
